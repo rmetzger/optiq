@@ -89,15 +89,15 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
         Expressions.methodDecl(Modifier.PUBLIC, Object[].class,
             BuiltinMethod.FUNCTION1_APPLY.method.getName(),
             ImmutableList.of(root0_), blockBuilder.toBlock());
-    String s = Expressions.toString(methodDecl);
+    String generatedCode = Expressions.toString(methodDecl);
     if (OptiqPrepareImpl.DEBUG) {
-      System.out.println(s);
+      System.out.println(generatedCode);
     }
     try {
       //noinspection unchecked
       Function1<DataContext, Object[]> function =
           (Function1) ClassBodyEvaluator.createFastClassBodyEvaluator(
-              new Scanner(null, new StringReader(s)),
+              new Scanner(null, new StringReader(generatedCode)),
               "Reducer",
               Utilities.class,
               new Class[]{Function1.class},
@@ -109,7 +109,7 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
         reducedValues.add(
             rexBuilder.makeLiteral(value.right, value.left.getType(), true));
       }
-      Hook.EXPRESSION_REDUCER.run(Pair.of(s, values));
+      Hook.EXPRESSION_REDUCER.run(Pair.of(generatedCode, values));
     } catch (CompileException e) {
       throw new RuntimeException("While evaluating " + constExps, e);
     } catch (IOException e) {
