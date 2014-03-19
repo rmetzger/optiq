@@ -30,7 +30,6 @@ import org.eigenbase.util.*;
 import org.eigenbase.util14.DateTimeUtil;
 
 import net.hydromatic.avatica.ByteString;
-
 import net.hydromatic.optiq.runtime.Spaces;
 import net.hydromatic.optiq.runtime.SqlFunctions;
 
@@ -719,6 +718,16 @@ public class RexBuilder {
     type = SqlTypeUtil.addCharsetAndCollation(type, typeFactory);
     return new RexInputRef(i, type);
   }
+  
+  /**
+   * Create a reference to a variable in the context.
+   * @param type
+   * @param i
+   * @return
+   */
+  public RexContextRef makeContextRef(RelDataType type, int i) {
+		return new RexContextRef(i, type);
+  }
 
   /**
    * Creates a reference to a given field of the input relational expression.
@@ -1333,6 +1342,7 @@ public class RexBuilder {
     }
     return new ByteString(Arrays.copyOf(s.getBytes(), length));
   }
+
 }
 
 // End RexBuilder.java

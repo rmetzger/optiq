@@ -18,9 +18,7 @@
 package net.hydromatic.optiq.rules.java;
 
 import net.hydromatic.avatica.ByteString;
-
 import net.hydromatic.linq4j.expressions.*;
-
 import net.hydromatic.optiq.BuiltinMethod;
 import net.hydromatic.optiq.DataContext;
 import net.hydromatic.optiq.impl.java.JavaTypeFactory;
@@ -294,6 +292,10 @@ public class RexToLixTranslator {
       return translate(
           program.getExprList().get(((RexLocalRef) expr).getIndex()),
           nullAs);
+    case CONTEXT_REF:
+    	Iterable<? extends Expression> arguments = ( (RexContextRef) expr).createArgumens();
+		Method method = findMethod(Map.class, "get", Object.class);
+		return Expressions.call(method, arguments);
     case LITERAL:
       return translateLiteral(
           expr,

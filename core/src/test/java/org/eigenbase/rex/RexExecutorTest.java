@@ -133,11 +133,11 @@ public class RexExecutorTest {
       check(new Action() {
           public void check(RexBuilder rexBuilder, RexExecutorImpl executor) {
 	        final List<RexNode> reducedValues = new ArrayList<RexNode>();
-	        RelDataTypeFactory factory = new JavaTypeFactoryImpl();
+	       // RelDataTypeFactory factory = new JavaTypeFactoryImpl();
 	        RelDataTypeFactory rtf = rexBuilder.getTypeFactory();
 	        RelDataType testJava = rtf.createJavaType(String.class);
-	        RelDataType type = factory.createJavaType(String.class);
-			final RexInputRef str = rexBuilder.makeInputRef(type, 0);
+	    //    RelDataType type = factory.createJavaType(String.class);
+			final RexContextRef strVariable = rexBuilder.makeContextRef(testJava, 0);
 	        final RexNode plus =
 	            rexBuilder.makeCall(SqlStdOperatorTable.PLUS,
 	                rexBuilder.makeExactLiteral(BigDecimal.ONE),
@@ -145,7 +145,7 @@ public class RexExecutorTest {
 	        RexLiteral four = rexBuilder.makeExactLiteral(BigDecimal.valueOf(4));
 	        final RexNode substring =
 	            rexBuilder.makeCall(SqlStdOperatorTable.SUBSTRING,
-	                str, plus, four);
+	                strVariable, plus, four);
 	        executor.execute(rexBuilder, ImmutableList.of(substring, plus),
 	            reducedValues);
 	        assertThat(reducedValues.size(), equalTo(2));

@@ -28,6 +28,8 @@ public interface RexVisitor<R> {
   //~ Methods ----------------------------------------------------------------
 
   R visitInputRef(RexInputRef inputRef);
+  
+  R visitContextRef(RexContextRef contextRef);
 
   R visitLocalRef(RexLocalRef localRef);
 

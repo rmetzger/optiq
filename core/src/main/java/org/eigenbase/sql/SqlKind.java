@@ -414,6 +414,11 @@ public enum SqlKind {
    * <p>(Only used at the RexNode level.)</p>
    */
   INPUT_REF,
+  
+  /**
+   * Reference to a variable in the context.
+   */
+  CONTEXT_REF,
 
   /**
    * Reference to a sub-expression computed within the current relational

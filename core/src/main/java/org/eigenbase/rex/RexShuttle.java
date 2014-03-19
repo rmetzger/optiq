@@ -187,6 +187,10 @@ public class RexShuttle implements RexVisitor<RexNode> {
   public RexNode visitInputRef(RexInputRef inputRef) {
     return inputRef;
   }
+  
+  public RexNode visitContextRef(RexContextRef contextRef) {
+		return contextRef;
+	}
 
   public RexNode visitLocalRef(RexLocalRef localRef) {
     return localRef;
@@ -242,6 +246,7 @@ public class RexShuttle implements RexVisitor<RexNode> {
   public final RexNode apply(RexNode expr) {
     return (expr == null) ? null : expr.accept(this);
   }
+
 }
 
 // End RexShuttle.java
