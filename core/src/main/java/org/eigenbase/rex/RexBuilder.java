@@ -719,6 +719,13 @@ public class RexBuilder {
     type = SqlTypeUtil.addCharsetAndCollation(type, typeFactory);
     return new RexInputRef(i, type);
   }
+  
+  public RexInputRef makeExternalInputRef(
+	      RelDataType type,
+	      int i) {
+    type = SqlTypeUtil.addCharsetAndCollation(type, typeFactory);
+    return new RexInputRef(i, type, true);
+  }
 
   /**
    * Creates a reference to a given field of the input relational expression.

@@ -24,6 +24,7 @@ import java.util.regex.*;
 import org.eigenbase.rel.*;
 import org.eigenbase.rel.metadata.*;
 import org.eigenbase.rex.RexBuilder;
+import org.eigenbase.rex.RexExecutable;
 import org.eigenbase.rex.RexNode;
 import org.eigenbase.trace.*;
 import org.eigenbase.util.*;
@@ -281,8 +282,8 @@ public interface RelOptPlanner {
     /**
      * Reduces expressions, and writes their results into {@code reducedValues}.
      */
-    void execute(RexBuilder rexBuilder, List<RexNode> constExps,
-        List<RexNode> reducedValues);
+    RexExecutable createExecutable(RexBuilder rexBuilder,
+    		List<RexNode> constExps);
   }
 
   /**

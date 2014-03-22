@@ -48,6 +48,11 @@ import org.eigenbase.util.Pair;
  * DEPTNO2.</p>
  */
 public class RexInputRef extends RexSlot {
+  
+  // indicates whether this InputRef refers to a variable that needs
+  // to be externally passed for evaluation.
+  private boolean externalRef;
+  
   //~ Static fields/initializers ---------------------------------------------
 
   // list of common names, to reduce memory allocations
@@ -64,6 +69,11 @@ public class RexInputRef extends RexSlot {
    */
   public RexInputRef(int index, RelDataType type) {
     super(createName(index), index, type);
+  }
+  
+  public RexInputRef(int index, RelDataType type, boolean externalRef) {
+    super(createName(index), index, type);
+    this.externalRef = externalRef;
   }
 
   //~ Methods ----------------------------------------------------------------
@@ -99,6 +109,10 @@ public class RexInputRef extends RexSlot {
     return SqlKind.INPUT_REF;
   }
 
+  public boolean isExternalRef() {
+	  return externalRef;
+  }
+  
   public <R> R accept(RexVisitor<R> visitor) {
     return visitor.visitInputRef(this);
   }

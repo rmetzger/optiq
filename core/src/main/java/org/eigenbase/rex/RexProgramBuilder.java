@@ -902,8 +902,12 @@ public class RexProgramBuilder {
 
       // Return a reference to the N'th expression, which should be
       // equivalent.
-      final RexLocalRef ref = localRefList.get(index);
-      return ref;
+      final boolean isExternal = input.isExternalRef();
+      if(!isExternal) {
+    	  final RexLocalRef ref = localRefList.get(index);
+	      return ref;
+      }
+      return input;
     }
 
     public RexNode visitLocalRef(RexLocalRef local) {

@@ -29,7 +29,6 @@ import org.eigenbase.util.Pair;
 
 import net.hydromatic.linq4j.expressions.*;
 import net.hydromatic.linq4j.function.Function1;
-
 import net.hydromatic.optiq.BuiltinMethod;
 import net.hydromatic.optiq.DataContext;
 import net.hydromatic.optiq.jdbc.JavaTypeFactoryImpl;
@@ -54,14 +53,10 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
         }
       };
 
-  private final DataContext dataContext;
-
-  public RexExecutorImpl(DataContext dataContext) {
-    this.dataContext = dataContext;
+  public RexExecutorImpl() {
   }
 
-  public void execute(RexBuilder rexBuilder, List<RexNode> constExps,
-      List<RexNode> reducedValues) {
+  public RexExecutable createExecutable(RexBuilder rexBuilder, List<RexNode> constExps) {
     final RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
     final RelDataType emptyRowType = typeFactory.builder().build();
     final RexProgramBuilder programBuilder =
@@ -89,32 +84,11 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
         Expressions.methodDecl(Modifier.PUBLIC, Object[].class,
             BuiltinMethod.FUNCTION1_APPLY.method.getName(),
             ImmutableList.of(root0_), blockBuilder.toBlock());
-    String s = Expressions.toString(methodDecl);
+    String generatedCode = Expressions.toString(methodDecl);
     if (OptiqPrepareImpl.DEBUG) {
-      System.out.println(s);
+      System.out.println(generatedCode);
     }
-    try {
-      //noinspection unchecked
-      Function1<DataContext, Object[]> function =
-          (Function1) ClassBodyEvaluator.createFastClassBodyEvaluator(
-              new Scanner(null, new StringReader(s)),
-              "Reducer",
-              Utilities.class,
-              new Class[]{Function1.class},
-              getClass().getClassLoader());
-      Object[] values = function.apply(dataContext);
-      assert values.length == constExps.size();
-      final List<Object> valueList = Arrays.asList(values);
-      for (Pair<RexNode, Object> value : Pair.zip(constExps, valueList)) {
-        reducedValues.add(
-            rexBuilder.makeLiteral(value.right, value.left.getType(), true));
-      }
-      Hook.EXPRESSION_REDUCER.run(Pair.of(s, values));
-    } catch (CompileException e) {
-      throw new RuntimeException("While evaluating " + constExps, e);
-    } catch (IOException e) {
-      throw new RuntimeException("While evaluating " + constExps, e);
-    }
+    return new RexExecutable(generatedCode, rexBuilder);
   }
 }
 
