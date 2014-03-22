@@ -18,25 +18,27 @@
 package org.eigenbase.rex;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
-
-import org.codehaus.commons.compiler.CompileException;
-import org.codehaus.janino.ClassBodyEvaluator;
-import org.codehaus.janino.Scanner;
-import org.eigenbase.util.Pair;
 
 import net.hydromatic.linq4j.function.Function1;
 import net.hydromatic.optiq.DataContext;
 import net.hydromatic.optiq.runtime.Hook;
 import net.hydromatic.optiq.runtime.Utilities;
 
+import org.codehaus.commons.compiler.CompileException;
+import org.codehaus.janino.ClassBodyEvaluator;
+import org.codehaus.janino.Scanner;
+import org.eigenbase.util.Pair;
+
 /**
 * Contains executable code from {@link RexNode} expression.
 */
-public class RexExecutable {
-
+public class RexExecutable  {
+	public final static String GENERATED_CLASS_NAME = "Reducer";
+	
 	Function1<DataContext, Object[]> compiledFunction;
 	private final String generatedCode;
 	private DataContext dataContext;
@@ -46,9 +48,9 @@ public class RexExecutable {
 		try {
 			compiledFunction = (Function1) ClassBodyEvaluator.createFastClassBodyEvaluator(
 			                  new Scanner(null, new StringReader(genCode)),
-			                  "Reducer",
+			                  GENERATED_CLASS_NAME,
 			                  Utilities.class,
-			                  new Class[]{Function1.class},
+			                  new Class[]{Function1.class , Serializable.class},
 			                  getClass().getClassLoader());
 		} catch (CompileException e) {
 			throw new RuntimeException("While compiling generated Rex code", e);
@@ -73,8 +75,16 @@ public class RexExecutable {
       }
       Hook.EXPRESSION_REDUCER.run(Pair.of(generatedCode, values));
 	}
+	
+	public Function1<DataContext, Object[]> getFunction() {
+		return compiledFunction;
+	}
 
 	public Object[] execute() {
 		return compiledFunction.apply(dataContext);
+	}
+
+	public String getSource() {
+		return generatedCode;
 	}
 }

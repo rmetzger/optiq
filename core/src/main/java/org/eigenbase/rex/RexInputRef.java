@@ -109,6 +109,10 @@ public class RexInputRef extends RexSlot {
     return SqlKind.INPUT_REF;
   }
 
+  public void setExternalRef(boolean set) {
+	  this.externalRef = set;
+  }
+  
   public boolean isExternalRef() {
 	  return externalRef;
   }
