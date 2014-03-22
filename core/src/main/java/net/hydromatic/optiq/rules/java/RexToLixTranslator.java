@@ -286,11 +286,10 @@ public class RexToLixTranslator {
     case INPUT_REF:
     	RexInputRef  inputRef = (RexInputRef) expr;
       if( inputRef.isExternalRef() ) {
-    	  // FIXME: type argument is hardcoded
     	  return convert(Expressions.call(
                   DataContext.ROOT,
                   BuiltinMethod.DATA_CONTEXT_GET.method,
-                  Expressions.constant("?" + inputRef.getIndex())), String.class );
+                  Expressions.constant("?" + inputRef.getIndex())), typeFactory.getJavaClass(expr.getType()) );
       }
       final int index = ((RexInputRef) expr).getIndex();
       Expression x = inputGetter.field(list, index);

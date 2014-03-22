@@ -17,30 +17,26 @@
 */
 package org.eigenbase.rex;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.List;
 
-import org.eigenbase.relopt.RelOptPlanner;
-import org.eigenbase.reltype.RelDataType;
-import org.eigenbase.reltype.RelDataTypeFactory;
-import org.eigenbase.util.Pair;
-
-import net.hydromatic.linq4j.expressions.*;
-import net.hydromatic.linq4j.function.Function1;
+import net.hydromatic.linq4j.expressions.BlockBuilder;
+import net.hydromatic.linq4j.expressions.Expression;
+import net.hydromatic.linq4j.expressions.Expressions;
+import net.hydromatic.linq4j.expressions.MethodDeclaration;
+import net.hydromatic.linq4j.expressions.ParameterExpression;
 import net.hydromatic.optiq.BuiltinMethod;
 import net.hydromatic.optiq.DataContext;
 import net.hydromatic.optiq.jdbc.JavaTypeFactoryImpl;
 import net.hydromatic.optiq.prepare.OptiqPrepareImpl;
 import net.hydromatic.optiq.rules.java.RexToLixTranslator;
-import net.hydromatic.optiq.runtime.*;
+
+import org.eigenbase.relopt.RelOptPlanner;
+import org.eigenbase.reltype.RelDataType;
+import org.eigenbase.reltype.RelDataTypeFactory;
+import org.eigenbase.sql.SqlKind;
 
 import com.google.common.collect.ImmutableList;
-
-import org.codehaus.commons.compiler.CompileException;
-import org.codehaus.janino.ClassBodyEvaluator;
-import org.codehaus.janino.Scanner;
 
 /**
 * Evaluates a {@link RexNode} expression.
@@ -53,17 +49,17 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
         }
       };
 
-  public RexExecutorImpl() {
-  }
-
   public RexExecutable createExecutable(RexBuilder rexBuilder, List<RexNode> constExps) {
     final RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
     final RelDataType emptyRowType = typeFactory.builder().build();
     final RexProgramBuilder programBuilder =
         new RexProgramBuilder(emptyRowType, rexBuilder);
     for (RexNode node : constExps) {
-      programBuilder.addProject(
-          node, "c" + programBuilder.getProjectList().size());
+      // only project result if root is not an InputRef.
+      if(node.getKind() != SqlKind.INPUT_REF) {
+        programBuilder.addProject(
+    	   node, "c" + programBuilder.getProjectList().size());
+      }
     }
     final JavaTypeFactoryImpl javaTypeFactory = new JavaTypeFactoryImpl();
     final BlockBuilder blockBuilder = new BlockBuilder();
