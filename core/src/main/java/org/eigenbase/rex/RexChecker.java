@@ -108,6 +108,10 @@ public class RexChecker extends RexVisitorImpl<Boolean> {
 
   public Boolean visitInputRef(RexInputRef ref) {
     final int index = ref.getIndex();
+    if (ref.isExternalRef()) {
+      // blindly trust external refs.
+      return null;
+    }
     if ((index < 0) || (index >= inputTypeList.size())) {
       assert !fail
           : "RexInputRef index " + index

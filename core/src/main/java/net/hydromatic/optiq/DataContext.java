@@ -60,6 +60,12 @@ public interface DataContext {
    */
   Object get(String name);
 
+  /**
+   * Fast integer-indexed access to context variables.
+   * @param i Index of variable
+   */
+  Object get(int i);
+
   /** Variable that may be asked for in a call to {@link DataContext#get}. */
   enum Variable {
     /** The time at which the current statement started executing. In

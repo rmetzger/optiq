@@ -20,21 +20,22 @@ package org.eigenbase.rex;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
+import org.eigenbase.relopt.RelOptPlanner;
+import org.eigenbase.reltype.RelDataType;
+import org.eigenbase.reltype.RelDataTypeFactory;
+import org.eigenbase.sql.SqlKind;
+
 import net.hydromatic.linq4j.expressions.BlockBuilder;
 import net.hydromatic.linq4j.expressions.Expression;
 import net.hydromatic.linq4j.expressions.Expressions;
 import net.hydromatic.linq4j.expressions.MethodDeclaration;
 import net.hydromatic.linq4j.expressions.ParameterExpression;
+
 import net.hydromatic.optiq.BuiltinMethod;
 import net.hydromatic.optiq.DataContext;
 import net.hydromatic.optiq.jdbc.JavaTypeFactoryImpl;
 import net.hydromatic.optiq.prepare.OptiqPrepareImpl;
 import net.hydromatic.optiq.rules.java.RexToLixTranslator;
-
-import org.eigenbase.relopt.RelOptPlanner;
-import org.eigenbase.reltype.RelDataType;
-import org.eigenbase.reltype.RelDataTypeFactory;
-import org.eigenbase.sql.SqlKind;
 
 import com.google.common.collect.ImmutableList;
 
@@ -48,17 +49,23 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
           throw new UnsupportedOperationException();
         }
       };
+  private DataContext defaultContext;
 
-  public RexExecutable createExecutable(RexBuilder rexBuilder, List<RexNode> constExps) {
+  public RexExecutorImpl(DataContext defaultContext) {
+    this.defaultContext = defaultContext;
+  }
+
+  public RexExecutable createExecutable(RexBuilder rexBuilder,
+      List<RexNode> constExps) {
     final RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
     final RelDataType emptyRowType = typeFactory.builder().build();
-    final RexProgramBuilder programBuilder =
-        new RexProgramBuilder(emptyRowType, rexBuilder);
+    final RexProgramBuilder programBuilder = new RexProgramBuilder(
+        emptyRowType, rexBuilder);
     for (RexNode node : constExps) {
       // only project result if root is not an InputRef.
-      if(node.getKind() != SqlKind.INPUT_REF) {
-        programBuilder.addProject(
-    	   node, "c" + programBuilder.getProjectList().size());
+      if (node.getKind() != SqlKind.INPUT_REF) {
+        programBuilder.addProject(node, "c"
+            + programBuilder.getProjectList().size());
       }
     }
     final JavaTypeFactoryImpl javaTypeFactory = new JavaTypeFactoryImpl();
@@ -84,7 +91,9 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
     if (OptiqPrepareImpl.DEBUG) {
       System.out.println(generatedCode);
     }
-    return new RexExecutable(generatedCode, rexBuilder);
+    final RexExecutable exec = new RexExecutable(generatedCode, rexBuilder);
+    exec.setDataContext(defaultContext);
+    return exec;
   }
 }
 

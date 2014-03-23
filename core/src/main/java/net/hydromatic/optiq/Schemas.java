@@ -332,8 +332,8 @@ public final class Schemas {
 
     public DummyDataContext(OptiqConnection connection) {
       this.connection = connection;
-      this.map =
-          ImmutableMap.<String, Object>of("timeZone", TimeZone.getDefault(), "?1", "Osterhase");
+      this.map = ImmutableMap.<String, Object>of("timeZone",
+          TimeZone.getDefault());
     }
 
     public SchemaPlus getRootSchema() {
@@ -350,6 +350,10 @@ public final class Schemas {
 
     public Object get(String name) {
       return map.get(name);
+    }
+
+    public Object get(int i) {
+      return map.get(i);
     }
   }
 }

@@ -1028,6 +1028,9 @@ public class RexUtil {
 
     public Void visitInputRef(RexInputRef inputRef) {
       super.visitInputRef(inputRef);
+      if (inputRef.isExternalRef()) {
+        return null;
+      }
       if (inputRef.getIndex() >= inputRowType.getFieldCount()) {
         throw new IllegalForwardRefException();
       }

@@ -59,6 +59,7 @@ public enum BuiltinMethod {
       SchemaPlus.class, Class.class, String.class),
   REFLECTIVE_SCHEMA_GET_TARGET(ReflectiveSchema.class, "getTarget"),
   DATA_CONTEXT_GET(DataContext.class, "get", String.class),
+  DATA_CONTEXT_GET_INDEX(DataContext.class, "get", int.class),
   DATA_CONTEXT_GET_ROOT_SCHEMA(DataContext.class, "getRootSchema"),
   JDBC_SCHEMA_DATA_SOURCE(JdbcSchema.class, "getDataSource"),
   RESULT_SET_ENUMERABLE_OF(ResultSetEnumerable.class, "of", DataSource.class,

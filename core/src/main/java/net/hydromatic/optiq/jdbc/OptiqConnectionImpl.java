@@ -17,6 +17,7 @@
 */
 package net.hydromatic.optiq.jdbc;
 
+
 import net.hydromatic.avatica.*;
 
 import net.hydromatic.linq4j.*;
@@ -35,7 +36,7 @@ import net.hydromatic.optiq.server.OptiqServerStatement;
 
 import com.google.common.collect.*;
 
-import java.io.Serializable;
+import java.io.*;
 import java.lang.reflect.*;
 import java.sql.*;
 import java.util.*;
@@ -308,6 +309,10 @@ abstract class OptiqConnectionImpl
     public QueryProvider getQueryProvider() {
       return queryProvider;
     }
+
+    public Object get(int i) {
+      return null;
+    }
   }
 
   /** Implementation of Context. */
@@ -363,6 +368,10 @@ abstract class OptiqConnectionImpl
     }
 
     public Object get(String name) {
+      return null;
+    }
+
+    public Object get(int i) {
       return null;
     }
   }

@@ -25,14 +25,15 @@ import org.eigenbase.relopt.RelOptCluster;
 import org.eigenbase.relopt.RelOptSchema;
 import org.eigenbase.reltype.RelDataType;
 import org.eigenbase.sql.fun.SqlStdOperatorTable;
-import org.eigenbase.sql.fun.SqlSubstringFunction;
-import org.eigenbase.sql.type.BasicSqlType;
 import org.eigenbase.sql.type.SqlTypeName;
 import org.eigenbase.util.NlsString;
+
+import net.hydromatic.linq4j.QueryProvider;
 
 import net.hydromatic.optiq.DataContext;
 import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.Schemas;
+import net.hydromatic.optiq.impl.java.JavaTypeFactory;
 import net.hydromatic.optiq.server.OptiqServerStatement;
 import net.hydromatic.optiq.tools.Frameworks;
 
@@ -58,45 +59,62 @@ public class RexExecutorTest {
             final RexBuilder rexBuilder = cluster.getRexBuilder();
             DataContext dataContext =
                 Schemas.createDataContext(statement.getConnection());
-            final RexExecutorImpl executor = new RexExecutorImpl();
+            final RexExecutorImpl executor = new RexExecutorImpl(dataContext);
             action.check(rexBuilder, executor, dataContext);
             return null;
           }
         });
   }
 
-  @Test public void testVariableExecution() throws Exception {
+  @Test
+  public void testVariableExecution() throws Exception {
     check(new Action() {
-      public void check(RexBuilder rexBuilder, RexExecutorImpl executor, DataContext dataContext) {
-        final List<RexNode> reducedValues = new ArrayList<RexNode>();
-        final RelDataType varchar = rexBuilder.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
-        final RelDataType integer = rexBuilder.getTypeFactory().createSqlType(SqlTypeName.INTEGER);
-        // optiq is internally creating the creating the input ref via a RexRangeRef
+      public void check(RexBuilder rexBuilder, RexExecutorImpl executor,
+          DataContext dataContext) {
+        ArrayList<Object> values = new ArrayList<Object>(1);
+        final DataContext testContext = new TestDataContext(values);
+        final RelDataType varchar = rexBuilder.getTypeFactory().createSqlType(
+            SqlTypeName.VARCHAR);
+        final RelDataType integer = rexBuilder.getTypeFactory().createSqlType(
+            SqlTypeName.INTEGER);
+        // optiq is internally creating the creating the input ref via a
+        // RexRangeRef
         // which eventually leads to a RexInputRef. So we are good.
         final RexInputRef input = rexBuilder.makeExternalInputRef(varchar, 1);
         final RexNode lengthArg = rexBuilder.makeLiteral(3, integer, true);
-        final RexNode substr = rexBuilder.makeCall(SqlStdOperatorTable.SUBSTRING, (RexNode)input, (RexNode)lengthArg);
+        final RexNode substr = rexBuilder
+            .makeCall(SqlStdOperatorTable.SUBSTRING, (RexNode) input,
+                (RexNode) lengthArg);
         ImmutableList<RexNode> constExps = ImmutableList.<RexNode>of(substr);
-        final RexExecutable exec = executor.createExecutable(rexBuilder, constExps);
-        exec.setDataContext(dataContext);
-		Object[] result = exec.execute();
-		System.err.println("Result="+result+", result[0]="+result[0]);
+        final RexExecutable exec = executor.createExecutable(rexBuilder,
+            constExps);
+        exec.setDataContext(testContext);
+        values.add(null);
+        values.add("Hello World");
+        Object[] result = exec.execute();
+        assertTrue(result[0] instanceof String);
+        assertThat((String) result[0], equalTo("llo World"));
+        values.set(1, "Optiq");
+        result = exec.execute();
+        assertTrue(result[0] instanceof String);
+        assertThat((String) result[0], equalTo("tiq"));
       }
     });
   }
 
   /**
-   * public Object[] apply(Object root0) {
-   *  return new Object[] {10};
-   * }
+   * public Object[] apply(Object root0) { return new Object[] {10}; }
    */
-  @Test public void testConstant() throws Exception {
+  @Test
+  public void testConstant() throws Exception {
     check(new Action() {
-      public void check(RexBuilder rexBuilder, RexExecutorImpl executor, DataContext dataContext) {
+      public void check(RexBuilder rexBuilder, RexExecutorImpl executor,
+          DataContext dataContext) {
         final List<RexNode> reducedValues = new ArrayList<RexNode>();
         final RexLiteral ten = rexBuilder.makeExactLiteral(BigDecimal.TEN);
         ImmutableList<RexNode> constExps = ImmutableList.<RexNode>of(ten);
-        final RexExecutable exec = executor.createExecutable(rexBuilder, constExps);
+        final RexExecutable exec = executor.createExecutable(rexBuilder,
+            constExps);
         exec.setDataContext(dataContext);
         exec.reduce(constExps, reducedValues);
         assertThat(reducedValues.size(), equalTo(1));
@@ -107,23 +125,23 @@ public class RexExecutorTest {
     });
   }
 
-  @Test public void testSubstring() throws Exception {
+  @Test
+  public void testSubstring() throws Exception {
     check(new Action() {
-      public void check(RexBuilder rexBuilder, RexExecutorImpl executor, DataContext dataContext) {
+      public void check(RexBuilder rexBuilder, RexExecutorImpl executor,
+          DataContext dataContext) {
         final List<RexNode> reducedValues = new ArrayList<RexNode>();
-        final RexLiteral hello =
-            rexBuilder.makeCharLiteral(
-                new NlsString("Hello world!", null, null));
-        final RexNode plus =
-            rexBuilder.makeCall(SqlStdOperatorTable.PLUS,
-                rexBuilder.makeExactLiteral(BigDecimal.ONE),
-                rexBuilder.makeExactLiteral(BigDecimal.ONE));
+        final RexLiteral hello = rexBuilder.makeCharLiteral(new NlsString(
+            "Hello world!", null, null));
+        final RexNode plus = rexBuilder.makeCall(SqlStdOperatorTable.PLUS,
+            rexBuilder.makeExactLiteral(BigDecimal.ONE),
+            rexBuilder.makeExactLiteral(BigDecimal.ONE));
         RexLiteral four = rexBuilder.makeExactLiteral(BigDecimal.valueOf(4));
-        final RexNode substring =
-            rexBuilder.makeCall(SqlStdOperatorTable.SUBSTRING,
-                hello, plus, four);
+        final RexNode substring = rexBuilder.makeCall(
+            SqlStdOperatorTable.SUBSTRING, hello, plus, four);
         final List<RexNode> constExps = ImmutableList.of(substring, plus);
-        final RexExecutable exec = executor.createExecutable(rexBuilder, constExps);
+        final RexExecutable exec = executor.createExecutable(rexBuilder,
+            constExps);
         exec.setDataContext(dataContext);
         exec.reduce(constExps, reducedValues);
         assertThat(reducedValues.size(), equalTo(2));
@@ -142,7 +160,39 @@ public class RexExecutorTest {
    * {@link org.eigenbase.rex.RexExecutorImpl#execute} to evaluate them into
    * a list, then check that the results are as expected. */
   interface Action {
-    void check(RexBuilder rexBuilder, RexExecutorImpl executor, DataContext dataContext);
+    void check(RexBuilder rexBuilder, RexExecutorImpl executor,
+        DataContext dataContext);
+  }
+
+  /**
+   * ArrayList-based DataContext to check Rex execution.
+   */
+  public static class TestDataContext implements DataContext {
+    private final ArrayList<Object> values;
+
+    public TestDataContext(ArrayList<Object> values) {
+      this.values = values;
+    }
+
+    public SchemaPlus getRootSchema() {
+      throw new RuntimeException("Unsupported");
+    }
+
+    public JavaTypeFactory getTypeFactory() {
+      throw new RuntimeException("Unsupported");
+    }
+
+    public QueryProvider getQueryProvider() {
+      throw new RuntimeException("Unsupported");
+    }
+
+    public Object get(String name) {
+      throw new RuntimeException("Unsupported");
+    }
+
+    public Object get(int i) {
+      return values.get(i);
+    }
   }
 }
 

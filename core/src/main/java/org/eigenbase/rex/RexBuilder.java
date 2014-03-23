@@ -709,20 +709,18 @@ public class RexBuilder {
   /**
    * Creates a reference to a given field of the input record.
    *
-   * @param type Type of field
-   * @param i    Ordinal of field
+   * @param type
+   *          Type of field
+   * @param i
+   *          Ordinal of field
    * @return Reference to field
    */
-  public RexInputRef makeInputRef(
-      RelDataType type,
-      int i) {
+  public RexInputRef makeInputRef(RelDataType type, int i) {
     type = SqlTypeUtil.addCharsetAndCollation(type, typeFactory);
     return new RexInputRef(i, type);
   }
-  
-  public RexInputRef makeExternalInputRef(
-	      RelDataType type,
-	      int i) {
+
+  public RexInputRef makeExternalInputRef(RelDataType type, int i) {
     type = SqlTypeUtil.addCharsetAndCollation(type, typeFactory);
     return new RexInputRef(i, type, true);
   }

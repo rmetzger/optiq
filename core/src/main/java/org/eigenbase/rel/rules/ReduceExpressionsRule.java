@@ -324,7 +324,8 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     RelOptPlanner.Executor executor =
         rel.getCluster().getPlanner().getExecutor();
     List<RexNode> reducedValues = new ArrayList<RexNode>();
-    executor.createExecutable(rexBuilder, constExps, reducedValues);
+    final RexExecutable exec = executor.createExecutable(rexBuilder, constExps);
+    exec.reduce(constExps, reducedValues);
 
     // For ProjectRel, we have to be sure to preserve the result
     // types, so always cast regardless of the expression type.

@@ -284,17 +284,16 @@ public class RexToLixTranslator {
     }
     switch (expr.getKind()) {
     case INPUT_REF:
-    	RexInputRef  inputRef = (RexInputRef) expr;
-      if( inputRef.isExternalRef() ) {
-    	  return convert(Expressions.call(
-                  DataContext.ROOT,
-                  BuiltinMethod.DATA_CONTEXT_GET.method,
-                  Expressions.constant("?" + inputRef.getIndex())), typeFactory.getJavaClass(expr.getType()) );
+      RexInputRef inputRef = (RexInputRef) expr;
+      if (inputRef.isExternalRef()) {
+        return convert(Expressions.call(DataContext.ROOT,
+            BuiltinMethod.DATA_CONTEXT_GET_INDEX.method,
+            Expressions.constant(inputRef.getIndex())),
+            typeFactory.getJavaClass(expr.getType()));
       }
       final int index = ((RexInputRef) expr).getIndex();
       Expression x = inputGetter.field(list, index);
-      return list.append(
-          "v",
+      return list.append("v",
           nullAs.handle(
               list.append("v", x)));
     case LOCAL_REF:
