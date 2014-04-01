@@ -58,8 +58,12 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
       RexToLixTranslator.InputGetter getter) {
     final RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
     final RelDataType emptyRowType = typeFactory.builder().build();
+    return compile(rexBuilder, constExps, getter, emptyRowType);
+  }
+  private String compile(RexBuilder rexBuilder, List<RexNode> constExps,
+      RexToLixTranslator.InputGetter getter, RelDataType rowType) {
     final RexProgramBuilder programBuilder =
-        new RexProgramBuilder(emptyRowType, rexBuilder);
+        new RexProgramBuilder(rowType, rexBuilder);
     for (RexNode node : constExps) {
       programBuilder.addProject(
           node, "c" + programBuilder.getProjectList().size());
@@ -98,6 +102,7 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
    */
   public RexExecutable getExecutable(final RexBuilder rexBuilder,
       List<RexNode> constExps, final RelDataType rowType) {
+
     InputGetter getter =  new RexToLixTranslator.InputGetter() {
     final JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
     public Expression field(BlockBuilder list, int index) {
@@ -113,37 +118,37 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
         typeFactory.getJavaClass(rowType.getFieldList().get(index).getType()));
     }};
 
-    final RexProgramBuilder programBuilder =
-        new RexProgramBuilder(rowType, rexBuilder);
-    for (RexNode node : constExps) {
-      programBuilder.addProject(
-          node, "c" + programBuilder.getProjectList().size());
-    }
-    final JavaTypeFactoryImpl javaTypeFactory = new JavaTypeFactoryImpl();
-    final BlockBuilder blockBuilder = new BlockBuilder();
-    final ParameterExpression root0_ =
-        Expressions.parameter(Object.class, "root0");
-    final ParameterExpression root_ = DataContext.ROOT;
-    blockBuilder.add(
-        Expressions.declare(
-            Modifier.FINAL, root_,
-            Expressions.convert_(root0_, DataContext.class)));
-
-    final List<Expression> expressions =
-        RexToLixTranslator.translateProjects(programBuilder.getProgram(),
-        javaTypeFactory, blockBuilder, getter);
-    blockBuilder.add(
-        Expressions.return_(null,
-            Expressions.newArrayInit(Object[].class, expressions)));
-    final MethodDeclaration methodDecl =
-        Expressions.methodDecl(Modifier.PUBLIC, Object[].class,
-            BuiltinMethod.FUNCTION1_APPLY.method.getName(),
-            ImmutableList.of(root0_), blockBuilder.toBlock());
-    String code = Expressions.toString(methodDecl);
-    if (OptiqPrepareImpl.DEBUG || true) {
-      System.out.println(code);
-    }
-
+//    final RexProgramBuilder programBuilder =
+//        new RexProgramBuilder(rowType, rexBuilder);
+//    for (RexNode node : constExps) {
+//      programBuilder.addProject(
+//          node, "c" + programBuilder.getProjectList().size());
+//    }
+//    final JavaTypeFactoryImpl javaTypeFactory = new JavaTypeFactoryImpl();
+//    final BlockBuilder blockBuilder = new BlockBuilder();
+//    final ParameterExpression root0_ =
+//        Expressions.parameter(Object.class, "root0");
+//    final ParameterExpression root_ = DataContext.ROOT;
+//    blockBuilder.add(
+//        Expressions.declare(
+//            Modifier.FINAL, root_,
+//            Expressions.convert_(root0_, DataContext.class)));
+//
+//    final List<Expression> expressions =
+//        RexToLixTranslator.translateProjects(programBuilder.getProgram(),
+//        javaTypeFactory, blockBuilder, getter);
+//    blockBuilder.add(
+//        Expressions.return_(null,
+//            Expressions.newArrayInit(Object[].class, expressions)));
+//    final MethodDeclaration methodDecl =
+//        Expressions.methodDecl(Modifier.PUBLIC, Object[].class,
+//            BuiltinMethod.FUNCTION1_APPLY.method.getName(),
+//            ImmutableList.of(root0_), blockBuilder.toBlock());
+//    String code = Expressions.toString(methodDecl);
+//    if (OptiqPrepareImpl.DEBUG || true) {
+//      System.out.println(code);
+//    }
+    final String code = compile(rexBuilder, constExps, getter, rowType);
 //    final String code = compile(rexBuilder, constExps,
 //      new RexToLixTranslator.InputGetter() {
 //      final JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();

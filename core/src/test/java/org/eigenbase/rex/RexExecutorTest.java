@@ -72,7 +72,6 @@ public class RexExecutorTest {
   @Test public void testVariableExecution() throws Exception {
     check(new Action() {
       public void check(RexBuilder rexBuilder, RexExecutorImpl executor) {
-        System.err.println("Hier");
         Object[] values = new Object[1];
         final DataContext testContext = new TestDataContext(values);
         final RelDataType varchar = rexBuilder.getTypeFactory().createSqlType(
