@@ -34,6 +34,7 @@ import net.hydromatic.optiq.DataContext;
 import net.hydromatic.optiq.jdbc.JavaTypeFactoryImpl;
 import net.hydromatic.optiq.prepare.OptiqPrepareImpl;
 import net.hydromatic.optiq.rules.java.RexToLixTranslator;
+import net.hydromatic.optiq.rules.java.RexToLixTranslator.InputGetter;
 import net.hydromatic.optiq.runtime.*;
 
 import com.google.common.collect.ImmutableList;
@@ -92,22 +93,70 @@ public class RexExecutorImpl implements RelOptPlanner.Executor {
   /**
    * creates an {@link RexExecutable} that allows to apply the
    * generated code during query processing (filter, projection).
+   *
+   * @param rowType describes the structure of the input row.
    */
   public RexExecutable getExecutable(final RexBuilder rexBuilder,
-      List<RexNode> constExps) {
-    final String code = compile(rexBuilder, constExps,
-      new RexToLixTranslator.InputGetter() {
-      final JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
-        public Expression field(BlockBuilder list, int index) {
-          System.err.println("got a call mojo");
-          return RexToLixTranslator.convert(
-              Expressions.call(
-                  DataContext.ROOT,
-                  BuiltinMethod.DATA_CONTEXT_GET.method,
-                  Expressions.constant("inputRecord")),
-              typeFactory.getJavaClass(null));
-        }
-      });
+      List<RexNode> constExps, final RelDataType rowType) {
+    InputGetter getter =  new RexToLixTranslator.InputGetter() {
+    final JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+    public Expression field(BlockBuilder list, int index) {
+      MethodCallExpression recFromCtx = Expressions.call(
+          DataContext.ROOT,
+          BuiltinMethod.DATA_CONTEXT_GET.method,
+          Expressions.constant("inputRecord"));
+      Expression recFromCtxCasted =
+          RexToLixTranslator.convert(recFromCtx, Object[].class);
+      IndexExpression recordAccess = Expressions.arrayIndex(recFromCtxCasted,
+          Expressions.constant(index));
+      return RexToLixTranslator.convert(recordAccess,
+        typeFactory.getJavaClass(rowType.getFieldList().get(index).getType()));
+    }};
+
+    final RexProgramBuilder programBuilder =
+        new RexProgramBuilder(rowType, rexBuilder);
+    for (RexNode node : constExps) {
+      programBuilder.addProject(
+          node, "c" + programBuilder.getProjectList().size());
+    }
+    final JavaTypeFactoryImpl javaTypeFactory = new JavaTypeFactoryImpl();
+    final BlockBuilder blockBuilder = new BlockBuilder();
+    final ParameterExpression root0_ =
+        Expressions.parameter(Object.class, "root0");
+    final ParameterExpression root_ = DataContext.ROOT;
+    blockBuilder.add(
+        Expressions.declare(
+            Modifier.FINAL, root_,
+            Expressions.convert_(root0_, DataContext.class)));
+
+    final List<Expression> expressions =
+        RexToLixTranslator.translateProjects(programBuilder.getProgram(),
+        javaTypeFactory, blockBuilder, getter);
+    blockBuilder.add(
+        Expressions.return_(null,
+            Expressions.newArrayInit(Object[].class, expressions)));
+    final MethodDeclaration methodDecl =
+        Expressions.methodDecl(Modifier.PUBLIC, Object[].class,
+            BuiltinMethod.FUNCTION1_APPLY.method.getName(),
+            ImmutableList.of(root0_), blockBuilder.toBlock());
+    String code = Expressions.toString(methodDecl);
+    if (OptiqPrepareImpl.DEBUG || true) {
+      System.out.println(code);
+    }
+
+//    final String code = compile(rexBuilder, constExps,
+//      new RexToLixTranslator.InputGetter() {
+//      final JavaTypeFactoryImpl typeFactory = new JavaTypeFactoryImpl();
+//        public Expression field(BlockBuilder list, int index) {
+//          System.err.println("got a call mojo");
+//          return RexToLixTranslator.convert(
+//              Expressions.call(
+//                  DataContext.ROOT,
+//                  BuiltinMethod.DATA_CONTEXT_GET.method,
+//                  Expressions.constant("inputRecord")),
+//              typeFactory.getJavaClass(null));
+//        }
+//      });
     return new RexExecutable(code, rexBuilder);
   }
 

@@ -37,9 +37,11 @@ import net.hydromatic.optiq.tools.Frameworks;
 import org.eigenbase.relopt.RelOptCluster;
 import org.eigenbase.relopt.RelOptSchema;
 import org.eigenbase.reltype.RelDataType;
+import org.eigenbase.reltype.RelDataTypeFactory;
 import org.eigenbase.sql.fun.SqlStdOperatorTable;
 import org.eigenbase.sql.type.SqlTypeName;
 import org.eigenbase.util.NlsString;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -70,7 +72,8 @@ public class RexExecutorTest {
   @Test public void testVariableExecution() throws Exception {
     check(new Action() {
       public void check(RexBuilder rexBuilder, RexExecutorImpl executor) {
-        ArrayList<Object> values = new ArrayList<Object>(1);
+        System.err.println("Hier");
+        Object[] values = new Object[1];
         final DataContext testContext = new TestDataContext(values);
         final RelDataType varchar = rexBuilder.getTypeFactory().createSqlType(
             SqlTypeName.VARCHAR);
@@ -79,21 +82,26 @@ public class RexExecutorTest {
         // optiq is internally creating the creating the input ref via a
         // RexRangeRef
         // which eventually leads to a RexInputRef. So we are good.
-        final RexInputRef input = rexBuilder.makeInputRef(varchar, 1);
+        final RexInputRef input = rexBuilder.makeInputRef(varchar, 0);
         final RexNode lengthArg = rexBuilder.makeLiteral(3, integer, true);
         final RexNode substr = rexBuilder
             .makeCall(SqlStdOperatorTable.SUBSTRING, (RexNode) input,
                 (RexNode) lengthArg);
         ImmutableList<RexNode> constExps = ImmutableList.<RexNode>of(substr);
+
+        final RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
+        final RelDataType rowType = typeFactory.builder()
+            .add("someStr", varchar)
+            .build();
+
         final RexExecutable exec = executor.getExecutable(rexBuilder,
-            constExps);
+            constExps, rowType);
         exec.setDataContext(testContext);
-        values.add(null);
-        values.add("Hello World");
+        values[0] = "Hello World";
         Object[] result = exec.execute();
         assertTrue(result[0] instanceof String);
         assertThat((String) result[0], equalTo("llo World"));
-        values.set(1, "Optiq");
+        values[0] = "Optiq";
         result = exec.execute();
         assertTrue(result[0] instanceof String);
         assertThat((String) result[0], equalTo("tiq"));
@@ -156,9 +164,9 @@ public class RexExecutorTest {
    * ArrayList-based DataContext to check Rex execution.
    */
   public static class TestDataContext implements DataContext {
-    private final ArrayList<Object> values;
+    private final Object[] values;
 
-    public TestDataContext(ArrayList<Object> values) {
+    public TestDataContext(Object[] values) {
       this.values = values;
     }
 
@@ -175,7 +183,12 @@ public class RexExecutorTest {
     }
 
     public Object get(String name) {
-      throw new RuntimeException("Unsupported");
+      if (name.equals("inputRecord")) {
+        return values;
+      } else {
+        Assert.fail("Wrong DataContext access");
+        return null;
+      }
     }
   }
 }
