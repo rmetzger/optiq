@@ -266,7 +266,7 @@
     <repository>
       <releases>
         <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
+        <updatePolicy>daily</updatePolicy>
         <checksumPolicy>warn</checksumPolicy>
       </releases>
       <id>pentaho</id>

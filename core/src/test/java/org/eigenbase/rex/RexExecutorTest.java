@@ -17,22 +17,9 @@
 */
 package org.eigenbase.rex;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
-import net.hydromatic.linq4j.QueryProvider;
-import net.hydromatic.optiq.DataContext;
-import net.hydromatic.optiq.SchemaPlus;
-import net.hydromatic.optiq.Schemas;
-import net.hydromatic.optiq.impl.java.JavaTypeFactory;
-import net.hydromatic.optiq.server.OptiqServerStatement;
-import net.hydromatic.optiq.tools.Frameworks;
+import java.util.*;
 
 import org.eigenbase.relopt.RelOptCluster;
 import org.eigenbase.relopt.RelOptSchema;
@@ -41,10 +28,25 @@ import org.eigenbase.reltype.RelDataTypeFactory;
 import org.eigenbase.sql.fun.SqlStdOperatorTable;
 import org.eigenbase.sql.type.SqlTypeName;
 import org.eigenbase.util.NlsString;
+
+import net.hydromatic.linq4j.QueryProvider;
+
+import net.hydromatic.optiq.DataContext;
+import net.hydromatic.optiq.SchemaPlus;
+import net.hydromatic.optiq.Schemas;
+import net.hydromatic.optiq.impl.java.JavaTypeFactory;
+import net.hydromatic.optiq.server.OptiqServerStatement;
+import net.hydromatic.optiq.tools.Frameworks;
+
+import com.google.common.collect.ImmutableList;
+
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link org.eigenbase.rex.RexExecutorImpl}.
